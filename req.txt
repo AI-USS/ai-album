@@ -1,0 +1,9 @@
+asgiref==3.8.1
+click==8.1.7
+Django==5.0.7
+pip==24.0
+python-dotenv==0.21.0
+setuptools==72.1.0
+sqlparse==0.4.4
+typing_extensions==4.11.0
+wheel==0.43.0
