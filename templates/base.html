@@ -1,12 +1,28 @@
+{% load static tailwind_tags %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AI-Album{% endblock title %}</title>
+    {% tailwind_css %}
+    {%block head_content%}    {%endblock head_content%}
 </head>
-<body>
-    {% block content %}
-    {% endblock content %}
+<body class="bg-gray-100 text-slate-900	">
+    <div class="min-h-screen flex">
+        <aside class="w-64 bg-gray-900 text-white shadow-md p-6">
+            <h1 class="text-2xl font-bold text-teal-400 mb-6">Galeria Rodzinna</h1>
+            <nav>
+                <ul>
+                    <li class="mb-4"><a href="#" class="hover:text-teal-400">Strona Główna</a></li>
+                    <li class="mb-4"><a href="#" class="hover:text-teal-400">Dodaj Zdjęcie</a></li>
+                    <li class="mb-4"><a href="#" class="hover:text-teal-400">Albumy</a></li>
+                    <li class="mb-4"><a href="#" class="hover:text-teal-400">Ustawienia</a></li>
+                </ul>
+            </nav>
+        </aside>
+        {% block content %}
+        {% endblock content %}
+    </div>
 </body>
 </html>

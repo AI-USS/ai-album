@@ -6,3 +6,8 @@ class HomePageView(TemplateView):
     template_name = "home.html"
 
 
+class AddPageView(TemplateView):
+    template_name = "add.html"
+
+class SearchPageView(TemplateView):
+    template_name = "search.html"
