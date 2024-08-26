@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: ${PGNAME}
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /path/on/host 

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block head_content %}
+<link rel="stylesheet" href="/static/css/annotorious.min.css">
+<script src="/static/js/annotorious.min.js"></script>
+{% endblock head_content %}
+{% block content %}
+<main class="w-full flex-grow bg-white p-8 shadow-lg rounded-lg">
+    <h1 class="text-3xl font-semibold mb-6 text-gray-900 text-center">Dodaj Zdjęcie</h1>
+    <form id="add_form" action="/add" method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div>
+            <label for="photo" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
+            <div class="relative mt-1">
+                {{ form.image }}
+                <label for="photo" class="block w-full text-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-500 bg-white hover:bg-teal-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400">
+                    Wybierz plik
+                </label>
+            </div>
+        </div>
+
+        <div id="image-container" class="hidden mt-6 flex justify-center">
+            <img id="image" src="#" alt="Podgląd zdjęcia" class="w-full max-h-[800px] object-contain">
+        </div>
+
+        <div>
+            <label for="description" class="block text-sm font-medium text-gray-700">Opis zdjęcia</label>
+            {{ form.description }}
+        </div>
+
+        <div>
+            <label for="tags" class="block text-sm font-medium text-gray-700">Tagi</label>
+            {{ form.tags }} 
+        </div>
+
+        <div class="flex justify-center">
+            <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-400 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400">
+                Prześlij zdjęcie
+            </button>
+        </div>
+        {{ form.additional_data }} 
+    </form>
+
+</main>
+</div>
+
+<script>
+
+const photoInput = document.getElementById('photo');
+const imageContainer = document.getElementById('image-container');
+const imageElement = document.getElementById('image');
+let anno;
+
+photoInput.addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            imageElement.src = e.target.result;
+            imageContainer.classList.remove('hidden');
+
+            if (anno){
+                anno.destroy();
+            }
+            anno = Annotorious.init({
+                image: imageElement,
+            });
+
+            anno.on('createAnnotation', (annotation) => {
+                console.log('Annotation created:', annotation);
+            });
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+
+document.getElementById('add_form').addEventListener('submit', function(event) {
+    event.preventDefault(); 
+    const additionalDataInput = document.getElementById('additional_data');
+    additionalDataInput.value = JSON.stringify(anno.getAnnotations());
+    this.submit();
+});
+
+</script>
+{% endblock content %}
