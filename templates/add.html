@@ -2,16 +2,18 @@
 {% block head_content %}
 <link rel="stylesheet" href="/static/css/annotorious.min.css">
 <script src="/static/js/annotorious.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 {% endblock head_content %}
 {% block content %}
 <main class="w-full flex-grow bg-white p-8 shadow-lg rounded-lg">
     <h1 class="text-3xl font-semibold mb-6 text-gray-900 text-center">Dodaj Zdjęcie</h1>
     <form action="#" method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
         <div>
-            <label for="photo" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
+            <label for="id_awers" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
             <div class="relative mt-1">
-                <input type="file" id="photo" name="photo" accept="image/*" required class="hidden">
-                <label for="photo" class="block w-full text-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-500 bg-white hover:bg-teal-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400">
+                <input type="file" id="awers" name="awers" accept="image/*" required class="hidden">
+                <label for="awers" class="block w-full text-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-500 bg-white hover:bg-teal-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400">
                     Wybierz plik
                 </label>
             </div>
@@ -22,14 +24,10 @@
         </div>
 
         <div>
-            <label for="description" class="block text-sm font-medium text-gray-700">Opis zdjęcia</label>
-            <textarea id="description" name="description" rows="3" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-400 focus:border-teal-400 sm:text-sm" placeholder="Dodaj krótki opis zdjęcia"></textarea>
+            <label for="id_description" class="block text-sm font-medium text-gray-700">Opis zdjęcia</label>
+            <textarea id="id_description" name="description" rows="3" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-400 focus:border-teal-400 sm:text-sm" placeholder="Dodaj krótki opis zdjęcia"></textarea>
         </div>
 
-        <div>
-            <label for="tags" class="block text-sm font-medium text-gray-700">Tagi</label>
-            <input type="text" id="tags" name="tags" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-400 focus:border-teal-400 sm:text-sm" placeholder="Wpisz tagi oddzielone przecinkami, np. 'wakacje, rodzina'">
-        </div>
 
         <div class="flex justify-center">
             <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-400 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400">
@@ -43,7 +41,7 @@
 
 <script>
 
-const photoInput = document.getElementById('photo');
+const photoInput = document.getElementById('awers');
 const imageContainer = document.getElementById('image-container');
 const imageElement = document.getElementById('image');
 let anno;
@@ -69,7 +67,53 @@ photoInput.addEventListener('change', function(event) {
             });
         }
         reader.readAsDataURL(file);
+     
+        var data = new FormData();
+        data.append("file", $("input[id^='awers']")[0].files[0]);
+        
+        // TODO REFACTOR
+        $.ajax({
+                type: "POST",
+                url: "{% url 'recognize_face' %}",
+                contentType: false,
+                processData: false,
+                mimeType: "multipart/form-data",
+                data: data,
+                success: function (response) {
+                    var res = JSON.parse(response)
+                    res["coords"].forEach(e => {
+                        topX = e[3]
+                        topY = e[0]
+                        width = e[1] - topX
+                        height = e[2] - topY
+                        console.log(topX, topY, width, height)
+                        
+                        
+                        var person = { 
+                            "@context": "http://www.w3.org/ns/anno.jsonld",
+                            "id": topX,
+                            "type": "Annotation",
+                            "body": [{
+                            "type": "TextualBody",
+                            "value": "Cokolwiek"
+                            }, {
+                            "type": "TextualBody",
+                            "purpose": "tagging",
+                            "value": "X",
+                            },],
+                            "target": {
+                            "selector": {
+                                "type": "FragmentSelector",
+                                "conformsTo": "http://www.w3.org/TR/media-frags/",
+                                "value": 'xywh=pixel:'+ topX + ',' + topY + ',' + width + ',' + height 
+                            }
+                            },
+                        };
+                    anno.addAnnotation(person)
+                    });
+
+                }
+            });
     }
 });
 </script>
-{% endblock content %}
