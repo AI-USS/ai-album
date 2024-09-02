@@ -1,8 +1,23 @@
 {% extends "base.html" %}
-
 {% block title %}AI-Album{% endblock %}
-
 {% block content %}
+<main class="flex-1 p-8">
+    <header class="mb-6">
+        <h2 class="text-4xl font-semibold text-teal-400">Ostatnie Zdjęcia</h2>
+        <p class="text-gray-600">Zobacz najnowsze zdjęcia dodane do galerii</p>
+    </header>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for object in object_list %}
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+            <img src="data:image/*;base64,{{ object.get_awers }}" alt="Zdjęcie 1" class="w-full h-48 object-cover">
+            <div class="p-4">
+                <h3 class="text-lg font-medium text-teal-400">Zdjęcie 1</h3>
+                <p class="text-sm text-gray-500">Data: 2024-08-20</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</main>
 {% endblock content %}
 
