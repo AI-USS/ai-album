@@ -6,8 +6,8 @@ from django.conf import settings
 
 
 urlpatterns = [
-    path("", views.HomePageView.as_view(), name="home"),
-    path("add", views.upload_photo, name="add"),
+    path("", views.home, name="home"),
+    path("add", views.upload_image, name="add"),
     path("search", views.SearchPageView.as_view(), name="search"),
     path("get/ajax/recognize_face", views.recognize_face_at_photo, name="recognize_face"),
 ]

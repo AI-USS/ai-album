@@ -1,42 +1,59 @@
 from django.views.generic.base import TemplateView
+from django.shortcuts import render, redirect
+from .models import Photographic, Tag
 from django.views.generic.list import ListView
-from django.shortcuts import render
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Photographic
 from .forms import AddPhotoForm
 import face_recognition
 import json
 import base64
 
+def home(request):
+    from base64 import b64encode
+    images = Photographic.objects.all().order_by('-id')[:12]
+    for image in images:
+        image.awers = b64encode(image.awers).decode('utf-8')
+        
+    return render(request, 'home.html', {'images': images})
 
-class HomePageView(ListView):
-    model = Photographic
-    template_name = "home.html"
 
+class AddPageView(TemplateView):
+    template_name = "add.html"
 
-def convert_image_file_to_binary(file):
-    binary_image = base64.b64encode(file.read())
-    binary_image = base64.b64decode(binary_image)
-    return binary_image
-
-def upload_photo(request):
-    if request.method == "POST":
+def upload_image(request):
+    if request.method == 'POST':
         form = AddPhotoForm(request.POST, request.FILES)
         if form.is_valid():
-            form = form.save(commit=False)
-            photo = request.FILES["awers"]
-            form.width = photo.image.width
-            form.height = photo.image.height
-            form.awers = convert_image_file_to_binary(photo)
-            form.save()
-            return HttpResponseRedirect("/")
+
+            file = form.cleaned_data['image']
+            description = form.cleaned_data['description']
+            tags = form.cleaned_data['tags']
+            additional = form.cleaned_data['additional_data']
+
+            image_data = file.read()
+
+            print(file.image.format)
+
+            # Save the image as a binary blob
+            image_model = Photographic.objects.create(
+                                    description=description,
+                                    awers=image_data,
+                                    format=file.image.format,
+                                    width=file.image.size[0],
+                                    height=file.image.size[1]
+                                       )
+            # image_model.save()
+            # tags=set(tags.split(','))
+            tagsORM, created = Tag.objects.get_or_create(keyword=tags)
+            image_model.tags.add(tagsORM)
+            image_model.save()
+
+            return redirect('/')
     else:
         form = AddPhotoForm()
-    return render(request, "add.html", {"form": form})
 
-class SearchPageView(TemplateView):
-    template_name = "search.html"
+    return render(request, 'add.html', {'form': form})
 
 
 @csrf_exempt
@@ -48,3 +65,6 @@ def recognize_face_at_photo(request):
         return JsonResponse({"coords": face_locations})
     
     return JsonResponse({}, status=400)
+
+class SearchPageView(TemplateView):
+    template_name = "search.html"

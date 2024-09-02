@@ -37,6 +37,8 @@ ALLOWED_HOSTS = ['*']
 
 
 # Application definition
+TAILWIND_APP_NAME = 'theme'
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
