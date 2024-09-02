@@ -10,7 +10,7 @@
     <form id="add_form" action="/add" method="POST" enctype="multipart/form-data" class="space-y-6">
         {% csrf_token %}
         <div>
-            <label for="id_awers" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
+            <label for="awers" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
             <div class="relative mt-1">
                 {{ form.image }}
                 <label for="awers" class="block w-full text-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-500 bg-white hover:bg-teal-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400">
