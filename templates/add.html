@@ -2,6 +2,7 @@
 {% block head_content %}
 <link rel="stylesheet" href="/static/css/annotorious.min.css">
 <script src="/static/js/annotorious.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 {% endblock head_content %}
 {% block content %}
 <main class="w-full flex-grow bg-white p-8 shadow-lg rounded-lg">
@@ -9,15 +10,13 @@
     <form id="add_form" action="/add" method="POST" enctype="multipart/form-data" class="space-y-6">
         {% csrf_token %}
         <div>
-            <label for="photo" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
+            <label for="id_awers" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
             <div class="relative mt-1">
                 {{ form.image }}
-                <label for="photo" class="block w-full text-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-500 bg-white hover:bg-teal-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400">
+                <label for="awers" class="block w-full text-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-500 bg-white hover:bg-teal-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400">
                     Wybierz plik
-                </label>
+                </label>    
             </div>
-        </div>
-
         <div id="image-container" class="hidden mt-6 flex justify-center">
             <img id="image" src="#" alt="Podgląd zdjęcia" class="w-full max-h-[800px] object-contain">
         </div>
@@ -45,7 +44,7 @@
 
 <script>
 
-const photoInput = document.getElementById('photo');
+const photoInput = document.getElementById('awers');
 const imageContainer = document.getElementById('image-container');
 const imageElement = document.getElementById('image');
 let anno;
@@ -71,6 +70,52 @@ photoInput.addEventListener('change', function(event) {
             });
         }
         reader.readAsDataURL(file);
+        var data = new FormData();
+        data.append("file", $("input[id^='awers']")[0].files[0]);
+        
+        // TODO REFACTOR
+        $.ajax({
+                type: "POST",
+                url: "{% url 'recognize_face' %}",
+                contentType: false,
+                processData: false,
+                mimeType: "multipart/form-data",
+                data: data,
+                success: function (response) {
+                    var res = JSON.parse(response)
+                    res["coords"].forEach(e => {
+                        topX = e[3]
+                        topY = e[0]
+                        width = e[1] - topX
+                        height = e[2] - topY
+                        console.log(topX, topY, width, height)
+                        
+                        
+                        var person = { 
+                            "@context": "http://www.w3.org/ns/anno.jsonld",
+                            "id": topX,
+                            "type": "Annotation",
+                            "body": [{
+                            "type": "TextualBody",
+                            "value": "Cokolwiek"
+                            }, {
+                            "type": "TextualBody",
+                            "purpose": "tagging",
+                            "value": "X",
+                            },],
+                            "target": {
+                            "selector": {
+                                "type": "FragmentSelector",
+                                "conformsTo": "http://www.w3.org/TR/media-frags/",
+                                "value": 'xywh=pixel:'+ topX + ',' + topY + ',' + width + ',' + height 
+                            }
+                            },
+                        };
+                    anno.addAnnotation(person)
+                    });
+
+                }
+            });
     }
 });
 

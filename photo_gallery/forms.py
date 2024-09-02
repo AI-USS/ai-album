@@ -1,10 +1,10 @@
 from django import forms
 
-class ImageForm(forms.Form):
+class AddPhotoForm(forms.Form):
     image = forms.ImageField(
         widget=forms.ClearableFileInput(attrs={
             'class': 'hidden',
-            'id':'photo',
+            'id':'awers',
             'accept':'image/*',
         })
     )
