@@ -53,7 +53,7 @@ class Person(models.Model):
     surname = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.name} {self.surname}"
+        return f"{self.id} {self.name} {self.surname}"
 
     class Meta:
         verbose_name = "Person"
@@ -62,7 +62,7 @@ class Person(models.Model):
 class LearningPhotoFace(models.Model):
     id = models.AutoField(primary_key=True)
     face = models.BinaryField(verbose_name="Face Blob")
-    personid = models.ForeignKey('Person', on_delete=models.CASCADE, related_name='learning_photos')
+    personid = models.ForeignKey('Person', null=True, on_delete=models.CASCADE, related_name='learning_photos')
     photographicid = models.ForeignKey('Photographic', on_delete=models.CASCADE, related_name='learning_faces')
     coordinates = ArrayField(
         models.FloatField(),
@@ -72,6 +72,12 @@ class LearningPhotoFace(models.Model):
 
     def __str__(self):
         return f"LearningPhotoFace {self.id} - Person: {self.personid} - Photo: {self.photographicid}"
+    
+    def admin_awers_image_tag(self):
+        return mark_safe('<img src="data:image/jpg;base64,{}"width="100" height="auto'.format(base64.b64encode(self.face).decode()))
+    
+    admin_awers_image_tag.short_description = "Face_Photo"
+    admin_awers_image_tag.allow_tags = True
 
     class Meta:
         verbose_name = "Learning Photo Face"
@@ -90,3 +96,8 @@ class PhotoVersion(models.Model):
     class Meta:
         verbose_name = "Photo Version"
         verbose_name_plural = "Photo Versions"
+
+class FaceEncoding(models.Model):
+    id = models.AutoField(primary_key=True)
+    file = models.BinaryField()
+    creation_date = models.DateField(auto_now_add=True)

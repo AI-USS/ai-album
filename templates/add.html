@@ -2,6 +2,7 @@
 {% block head_content %}
 <link rel="stylesheet" href="/static/css/annotorious.min.css">
 <script src="/static/js/annotorious.min.js"></script>
+<script src="/static/js/custom_widgets.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 {% endblock head_content %}
 {% block content %}
@@ -53,7 +54,6 @@ photoInput.addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
-        
         reader.onload = function(e) {
             imageElement.src = e.target.result;
             imageContainer.classList.remove('hidden');
@@ -63,6 +63,13 @@ photoInput.addEventListener('change', function(event) {
             }
             anno = Annotorious.init({
                 image: imageElement,
+                widgets: [
+                    NameWidget,
+                    LastNameWidget,
+                ],
+                formatters: [
+                    NameAndLastNameFormatter,
+                ]
             });
 
             anno.on('createAnnotation', (annotation) => {
@@ -83,37 +90,76 @@ photoInput.addEventListener('change', function(event) {
                 data: data,
                 success: function (response) {
                     var res = JSON.parse(response)
-                    res["coords"].forEach(e => {
-                        topX = e[3]
-                        topY = e[0]
-                        width = e[1] - topX
-                        height = e[2] - topY
-                        console.log(topX, topY, width, height)
-                        
-                        
-                        var person = { 
-                            "@context": "http://www.w3.org/ns/anno.jsonld",
-                            "id": topX,
-                            "type": "Annotation",
-                            "body": [{
-                            "type": "TextualBody",
-                            "value": "Cokolwiek"
-                            }, {
-                            "type": "TextualBody",
-                            "purpose": "tagging",
-                            "value": "X",
-                            },],
-                            "target": {
-                            "selector": {
-                                "type": "FragmentSelector",
-                                "conformsTo": "http://www.w3.org/TR/media-frags/",
-                                "value": 'xywh=pixel:'+ topX + ',' + topY + ',' + width + ',' + height 
-                            }
-                            },
-                        };
-                    anno.addAnnotation(person)
-                    });
+                    console.log(res)
+                    jsonObject = res
+                    for (let key in jsonObject) {
+                        if (jsonObject.hasOwnProperty(key)) {
+                            const entry = jsonObject[key];
+                            
 
+                            topX = entry.coords[3]
+                            topY = entry.coords[0]
+                            width = entry.coords[1] - topX
+                            height = entry.coords[2] - topY
+                            // console.log(topX, topY, width, height)
+                            // console.log(`Osoba ${key}:`);
+                            // console.log(`recognized: ${entry.recognized}`);
+                            // console.log(`id: ${entry.id}`);
+                            // console.log(`name: ${entry.name}`);
+                            // console.log(`last_name: ${entry.last_name}`);
+                            // console.log(`coords: ${entry.coords}`);
+                            // console.log('--------------------------');
+                            
+                            if (entry.recognized == false) {
+                                    var person = { 
+                                    "@context": "http://www.w3.org/ns/anno.jsonld",
+                                    "id": topX,
+                                    "type": "Annotation",
+                                    "body": [{
+                                        "type": "TextualBody",
+                                        "purpose": "name",
+                                        "value": null
+                                    },
+                                    {
+                                        "type": "TextualBody",
+                                        "purpose": "lastName",
+                                        "value": null
+                                    }],
+                                    "target": {
+                                    "selector": {
+                                        "type": "FragmentSelector",
+                                        "conformsTo": "http://www.w3.org/TR/media-frags/",
+                                        "value": 'xywh=pixel:'+ topX + ',' + topY + ',' + width + ',' + height 
+                                    }
+                                    },
+                                };
+                            } else {
+                                var person = { 
+                                    "@context": "http://www.w3.org/ns/anno.jsonld",
+                                    "id": topX,
+                                    "type": "Annotation",
+                                    "body": [{
+                                        "type": "TextualBody",
+                                        "purpose": "name",
+                                        "value": entry.name
+                                    },
+                                    {
+                                        "type": "TextualBody",
+                                        "purpose": "lastName",
+                                        "value": entry.last_name
+                                    }],
+                                    "target": {
+                                    "selector": {
+                                        "type": "FragmentSelector",
+                                        "conformsTo": "http://www.w3.org/TR/media-frags/",
+                                        "value": 'xywh=pixel:'+ topX + ',' + topY + ',' + width + ',' + height 
+                                    }
+                                    },
+                                };
+                            }
+                        anno.addAnnotation(person)
+                        }
+                    }
                 }
             });
     }
