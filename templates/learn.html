@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}AI-Album{% endblock %}
+{% block content %}
+<main class="flex-1 p-8">
+    <header class="mb-6">
+        <h2 class="text-4xl font-semibold text-teal-400"></h2>
+        <p class="text-gray-600">Ucz model na podstawie swoich zdjęć!</p>
+    </header>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-400 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400">
+            Ucz mnie Panie
+        </button>
+    </form>
+</main>
+{% endblock content %}
+

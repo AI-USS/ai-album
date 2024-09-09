@@ -9,5 +9,6 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("add", views.upload_image, name="add"),
     path("search", views.SearchPageView.as_view(), name="search"),
+    path("learn", views.learn, name="learn"),
     path("get/ajax/recognize_face", views.recognize_face_at_photo, name="recognize_face"),
 ]

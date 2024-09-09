@@ -41,3 +41,6 @@ class AddPhotoForm(forms.Form):
     )
     
     
+class ModelLearnForm(forms.Form):
+    class Meta:
+        widgets = {"any_field": forms.HiddenInput()}
