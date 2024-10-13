@@ -1,18 +1,22 @@
+from django.forms.models import BaseModelForm
 from django.views.generic.base import TemplateView
 from django.shortcuts import render, redirect
 from .models import Photographic, Tag, Person, LearningPhotoFace, FaceEncoding
 from django.views.generic.list import ListView
-from django.views.generic.edit import DeleteView
-from django.http import JsonResponse
+from django.views.generic.edit import DeleteView, UpdateView
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .forms import AddPhotoForm, ModelLearnForm
+from .forms import AddPhotoForm, ModelLearnForm, EditPhotoForm
 from collections import Counter
+from django.urls import reverse_lazy
 import face_recognition
 from PIL import Image
 import pickle
 import json
 import io
 import base64
+from django.db.models import Q
+
 
 
 def home(request):
@@ -20,9 +24,36 @@ def home(request):
     images = Photographic.objects.all().order_by('-id')[:12]
     for image in images:
         image.awers = b64encode(image.awers).decode('utf-8')
-        
-    return render(request, 'home.html', {'images': images})
+    
+    available_tags = Tag.objects.all()
+    available_people = Person.objects.all()
 
+    photographic_queryset = Photographic.objects.all()
+
+    selected_tags = request.GET.getlist('tags')[1:]
+    selected_people = request.GET.getlist('people')[1:]
+
+    selected_tags = list(map(int, selected_tags))
+    selected_people = list(map(int, selected_people))
+
+    if selected_tags:
+        photographic_queryset = photographic_queryset.filter(tags__id__in=selected_tags).distinct()
+
+    if selected_people:
+        queries = Q()
+        for person_id in selected_people:
+            queries |= Q(learning_faces__personid__id=person_id)
+        photographic_queryset = photographic_queryset.filter(queries).distinct()
+
+    context = {
+        'photographics': photographic_queryset,
+        'available_tags': available_tags,
+        'available_people': available_people,
+        'selected_tags': selected_tags,
+        'selected_people': selected_people
+    }
+
+    return render(request, 'home.html', context)
 
 
 def upload_image(request):
@@ -38,11 +69,7 @@ def upload_image(request):
             image_data = file.read()
 
             additional = json.loads(additional)
-            print(type(additional))
-            
-            print(file.image.format)
 
-            # Save the image as a binary blob
             image_model = Photographic.objects.create(
                                     description=description,
                                     awers=image_data,
@@ -51,12 +78,13 @@ def upload_image(request):
                                     height=file.image.size[1]
                                        )
 
-            tagsORM, created = Tag.objects.get_or_create(keyword=tags)
-            image_model.tags.add(tagsORM)
+            tags = tags.split("#")
+            for tag in tags:
+                if tag is not "":
+                    tagsORM, created = Tag.objects.get_or_create(keyword=tag)
+                    image_model.tags.add(tagsORM)
             image_model.save()
-            print(30 * "-")
-            print(additional)
-            print(30 * "-")
+
 
             for annotation in additional:
                 for info in annotation["body"]:
@@ -190,4 +218,134 @@ def _recognize_face(unknown_encoding, loaded_encodings):
     )
     if votes:
         return votes.most_common(1)[0][0]
+    
+
+class PhotographicDeleteView(DeleteView):
+    model = Photographic
+    template_name = "photographic_delete.html"
+    success_url = reverse_lazy("home")
+
+
+class PhotographicEditView(UpdateView):
+    model = Photographic
+    form_class = EditPhotoForm
+    template_name = "photographic_edit.html"
+    success_url = reverse_lazy("home")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        tags = []
+        for tag in obj.tags.all():
+            tags.append("#"+tag.keyword)
+        context["tags_for_js"] = tags
+
+        face_for_js = {}
+        faces = LearningPhotoFace.objects.select_related().filter(photographicid=obj.id)
+        for face in faces:
+            if face.personid is not None:
+                face_for_js[str(face.id)] = {"id": face.id, "name": face.personid.name, "last_name": face.personid.surname, "coords": face.coordinates}
+            else:
+                face_for_js[str(face.id)] = {"id": face.id, "name": None, "last_name": None, "coords": face.coordinates}
+            context["face_for_js"] = json.dumps(face_for_js)
+        return context
+    
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        tags = form.cleaned_data['djtags']
+        tags = tags.split("#")
+        for tag in self.object.tags.all():
+            self.object.tags.remove(tag)
+    
+        for tag in tags[1:]:
+            if tag not in self.object.tags.all():
+                tagsORM, created = Tag.objects.get_or_create(keyword=tag)
+                self.object.tags.add(tagsORM)
+        
+        additional = form.cleaned_data['additional_data']
+        additional = json.loads(additional)
+
+        faces_id_on_photo = [obj.id for obj in LearningPhotoFace.objects.select_related().filter(photographicid=self.object.id)]
+        faces_id_on_annotation = [annotation["id"] for annotation in additional if isinstance(annotation["id"], int)]
+        faces_id_from_photo_to_remove = list(set(faces_id_on_photo) - set(faces_id_on_annotation))
+        
+        for id in faces_id_from_photo_to_remove:
+            LearningPhotoFace.objects.filter(id=id).delete()
+
+
+        for annotation in additional:
+            for info in annotation["body"]:
+                if info["purpose"] == "name":
+                    name = info["value"]
+                if info["purpose"] == "lastName":
+                    last_name = info["value"]
+                if info["purpose"] == "newPerson":
+                    is_new_person = info["value"]
+                coords = annotation["target"]["selector"]["value"].split(':')[1].split(",")
+                coords = list(map(float, coords))
+                coords = [coords[0],coords[1],coords[0] + coords[2],coords[1] + coords[3]]
+                
+            if isinstance(annotation["id"], str):
+                opening_image_file = Image.open(io.BytesIO(self.object.awers))
+                cutted_face = opening_image_file.crop(coords)
+                img_byte_arr = io.BytesIO()
+                cutted_face.save(img_byte_arr, format=self.object.format)
+                img_byte_arr = img_byte_arr.getvalue()
+
+                if name is not None and last_name is not None:
+                    if is_new_person:
+                        person_model = Person.objects.create(
+                            name=name,
+                            surname=last_name
+                        )
+                        person_model.save()
+                    else:
+                        person_model = Person.objects.get(name=name, surname=last_name)
+
+                    LearningPhotoFace.objects.create(
+                        face=img_byte_arr,
+                        personid=person_model,
+                        photographicid=self.object,
+                        coordinates=coords
+                    )
+            else:
+                to_edit = LearningPhotoFace.objects.filter(id=annotation["id"])[0]
+                if to_edit.coordinates != coords:
+                    opening_image_file = Image.open(io.BytesIO(self.object.awers))
+                    cutted_face = opening_image_file.crop(coords)
+                    img_byte_arr = io.BytesIO()
+                    cutted_face.save(img_byte_arr, format=self.object.format)
+                    img_byte_arr = img_byte_arr.getvalue()
+
+                    LearningPhotoFace.objects.filter(id=to_edit.id).update(coordinates=coords, face=img_byte_arr)
+                if to_edit.personid:
+                    if is_new_person:
+                        person_model = Person.objects.create(
+                            name=name,
+                            surname=last_name
+                        )
+                        person_model.save()
+                        LearningPhotoFace.objects.filter(id=to_edit.id).update(personid=person_model)
+                    else:
+                        if to_edit.personid.name != name:
+                            Person.objects.filter(id=to_edit.personid.id).update(name=name)
+                        if to_edit.personid.surname != last_name:
+                            Person.objects.filter(id=to_edit.personid.id).update(surname=last_name)
+                elif to_edit.personid is None and name != None and last_name != None:
+                    if is_new_person:
+                        person_model = Person.objects.create(
+                            name=name,
+                            surname=last_name
+                        )
+                        person_model.save()
+                    else:
+                        person_model = Person.objects.get(name=name, surname=last_name)
+                        print(person_model)
+                    LearningPhotoFace.objects.filter(id=to_edit.id).update(personid=person_model)
+                else:
+                    continue
+
+        self.object.save()
+        return super().form_valid(form)
     

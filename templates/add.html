@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block head_content %}
 <link rel="stylesheet" href="/static/css/annotorious.min.css">
+<script src="/static/js/tags.js"></script>
 <script src="/static/js/annotorious.min.js"></script>
 <script src="/static/js/custom_widgets.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
@@ -28,8 +29,14 @@
         </div>
 
         <div>
-            <label for="tags" class="block text-sm font-medium text-gray-700">Tagi</label>
             {{ form.tags }} 
+
+        </div>
+        <div>
+            <label for="tagsjs" class="block text-sm font-medium text-gray-700">Tagi</label>
+            <input id="tagsjs" type="text" name="tagsjs" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-400 focus:border-teal-400 sm:text-sm" placeholder="Wpisz tagi oddzielone przecinkami, np. &#x27;wakacje, rodzina&#x27;" id="tags" maxlength="255"> 
+            <div id="tagsContainer" class="tag-container"></div>
+
         </div>
 
         <div class="flex justify-center">
@@ -44,6 +51,24 @@
 </div>
 
 <script>
+
+let tagsContainer = document.getElementById('tagsContainer');
+
+document.getElementById('tagsjs').addEventListener('keydown', function(e) {
+        if (e.key === " ") {
+            e.preventDefault();
+            let input = e.target.value;
+            if (input.startsWith('#')) {
+                createTagElement(value=input, input, tagsContainer, function (value) {
+                document.getElementById('djtags').value = document.getElementById('djtags').value.replace(value, '');
+            })
+                document.getElementById('djtags').value += input
+                e.target.value = ""
+            } else {
+                e.target.value = null;
+            }
+        }
+    });
 
 const photoInput = document.getElementById('awers');
 const imageContainer = document.getElementById('image-container');
@@ -73,14 +98,12 @@ photoInput.addEventListener('change', function(event) {
             });
 
             anno.on('createAnnotation', (annotation) => {
-                console.log('Annotation created:', annotation);
             });
         }
         reader.readAsDataURL(file);
         var data = new FormData();
         data.append("file", $("input[id^='awers']")[0].files[0]);
         
-        // TODO REFACTOR
         $.ajax({
                 type: "POST",
                 url: "{% url 'recognize_face' %}",
@@ -90,7 +113,6 @@ photoInput.addEventListener('change', function(event) {
                 data: data,
                 success: function (response) {
                     var res = JSON.parse(response)
-                    console.log(res)
                     jsonObject = res
                     for (let key in jsonObject) {
                         if (jsonObject.hasOwnProperty(key)) {
@@ -101,15 +123,7 @@ photoInput.addEventListener('change', function(event) {
                             topY = entry.coords[0]
                             width = entry.coords[1] - topX
                             height = entry.coords[2] - topY
-                            // console.log(topX, topY, width, height)
-                            // console.log(`Osoba ${key}:`);
-                            // console.log(`recognized: ${entry.recognized}`);
-                            // console.log(`id: ${entry.id}`);
-                            // console.log(`name: ${entry.name}`);
-                            // console.log(`last_name: ${entry.last_name}`);
-                            // console.log(`coords: ${entry.coords}`);
-                            // console.log('--------------------------');
-                            
+               
                             if (entry.recognized == false) {
                                     var person = { 
                                     "@context": "http://www.w3.org/ns/anno.jsonld",

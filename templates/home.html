@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block head_content %}
+<script src="/static/js/tags.js"></script>
+{% endblock head_content %}
 {% block title %}AI-Album{% endblock %}
 {% block content %}
 <main class="flex-1 p-8">
@@ -6,43 +9,117 @@
         <h2 class="text-4xl font-semibold text-teal-400">Ostatnie Zdjęcia</h2>
         <p class="text-gray-600">Zobacz najnowsze zdjęcia dodane do galerii</p>
     </header>
+    <form method="GET" action="{% url 'home' %}">
+        <label for="people-select">Wybierz osoby:</label>
+        <select id="people-select">
+            <option value="">-- Wybierz osobę --</option>
+            {% for person in available_people %}
+                <option value="{{ person.id }}">
+                    {{ person.name }} {{ person.surname }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="button" id="add-person" class="select-none rounded-lg bg-gradient-to-tr from-blue-900 to-blue-800 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-blue-900/10 transition-all hover:shadow-lg hover:shadow-blue-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">Dodaj osobę</button>
+
+        <label for="tags-select">Wybierz tagi:</label>
+        <select id="tags-select">
+            <option value="">-- Wybierz tag --</option>
+            {% for tag in available_tags %}
+                <option value="{{ tag.id }}">{{ tag.keyword }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" id="add-tag" class="select-none rounded-lg bg-gradient-to-tr from-blue-900 to-blue-800 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-blue-900/10 transition-all hover:shadow-lg hover:shadow-blue-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">Dodaj tag</button>
+
+        <div>
+            <h3>Wybrane osoby:</h3>
+            <div id="selected-people" class="tag-container"></div>
+
+            <h3>Wybrane tagi:</h3>
+            <div id="selected-tags" class="tag-container"></div>
+        </div>
+
+        <input type="hidden" name="people" id="people-input">
+        <input type="hidden" name="tags" id="tags-input">
+
+        <button type="submit" class="select-none rounded-lg bg-gradient-to-tr from-green-900 to-green-800 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-green-900/10 transition-all hover:shadow-lg hover:shadow-green-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">Szukaj</button>
+        <a href="{% url 'home' %}" class="select-none rounded-lg bg-gradient-to-tr from-red-900 to-red-800 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-red-900/10 transition-all hover:shadow-lg hover:shadow-red-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">Resetuj</a>
+    </form>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> 
-        {% for image in images %}
+        {% for image in photographics %}
         
         <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-            <img src="data:image;base64,{{image.awers}}" alt="Zdjęcie 1" class="w-full h-48 object-cover">
+            <img src="data:image;base64,{{image.get_awers}}" alt="Zdjęcie 1" class="w-full h-48 object-cover">
             <div class="p-4">
                 <h3 class="text-lg font-medium text-teal-400">Zdjęcie {{image.id}}</h3>
                 <p class="text-sm text-gray-500">Data: 2024-08-20</p>
             </div>
+          <a href="{% url 'photographic_edit' image.id %}" class="select-none rounded-lg bg-gradient-to-tr from-red-900 to-red-800 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-red-900/10 transition-all hover:shadow-lg hover:shadow-red-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">Edytuj</a>
+          <a href="{% url 'photographic_delete' image.id %}" class="select-none rounded-lg bg-gradient-to-tr from-red-900 to-red-800 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-red-900/10 transition-all hover:shadow-lg hover:shadow-red-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">Usuń</a>
         </div>
         {% endfor %}
     </div>
-
-       
-
-
-    <script>
-        function showDialog(id) {
-            let dialog = document.getElementById('modal');
-
-            dialog.classList.remove('hidden');
-            setTimeout(() => {
-                console.log(id)
-                dialog.classList.remove('opacity-1');
-            }, 1);
-        }
-        function hideDialog() {
-            let dialog = document.getElementById('modal');
-            dialog.classList.add('opacity-100');
-            setTimeout(() => {
-                dialog.classList.add('hidden');
-            }, 1);
-        }
-    </script> 
 </main>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const peopleSelect = document.getElementById('people-select');
+    const tagsSelect = document.getElementById('tags-select');
+    const selectedPeopleContainer = document.getElementById('selected-people');
+    const selectedTagsContainer = document.getElementById('selected-tags');
+    const peopleInputContainer = document.getElementById('people-input');
+    const tagsInputContainer = document.getElementById('tags-input');
+
+    const selectedPeople = new Set();
+    const selectedTags = new Set();
+
+    function updateHiddenInputs() {
+
+        peopleInputContainer.innerHTML = '';
+        tagsInputContainer.innerHTML = '';
+
+        selectedPeople.forEach(personId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'people'; 
+            input.value = personId;
+            peopleInputContainer.appendChild(input);
+        });
+
+        selectedTags.forEach(tagId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'tags'; 
+            input.value = tagId;
+            tagsInputContainer.appendChild(input);
+        });
+    }
+
+    document.getElementById('add-person').addEventListener('click', function () {
+        const selectedOption = peopleSelect.options[peopleSelect.selectedIndex];
+        if (selectedOption.value && !selectedPeople.has(selectedOption.value)) {
+            selectedPeople.add(selectedOption.value);
+            createTagElement(selectedOption.value, selectedOption.text, selectedPeopleContainer, function (value) {
+                selectedPeople.delete(value);
+                updateHiddenInputs();
+            });
+            updateHiddenInputs();
+        }
+    });
+
+    document.getElementById('add-tag').addEventListener('click', function () {
+        const selectedOption = tagsSelect.options[tagsSelect.selectedIndex];
+        if (selectedOption.value && !selectedTags.has(selectedOption.value)) {
+            selectedTags.add(selectedOption.value);
+            createTagElement(selectedOption.value, selectedOption.text, selectedTagsContainer, function (value) {
+                selectedTags.delete(value);
+                updateHiddenInputs();
+            });
+            updateHiddenInputs();
+        }
+    });
+});
+</script>
 
 {% endblock content %}
 

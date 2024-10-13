@@ -1,0 +1,26 @@
+.tag-container {
+    margin: 10px 0;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+div.tag-badge {
+    background-color: aquamarine;
+    padding: 5px;
+    margin: 5px;
+    border-radius: 10px;
+    pointer-events: none;
+}
+
+span.tag-close {
+    margin-left: 10px;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+div.tag-badge:hover{
+    background-color: red;
+}
+
+
