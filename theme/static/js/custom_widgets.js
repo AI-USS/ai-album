@@ -1,15 +1,12 @@
 var NameWidget = function(args) {
 
-    // 1. Find a current color setting in the annotation, if any
     var currentNameBody = args.annotation ? 
       args.annotation.bodies.find(function(b) {
         return b.purpose == 'name';
       }) : null;
     
-    // 2. Keep the value in a variable
     var currentNameValue = currentNameBody ? currentNameBody.value : null;
     
-    // 3. Triggers callbacks on user action
     var addTag = function(evt) {
       if (currentNameBody) {
         args.onUpdateBody(currentNameBody, {
@@ -26,7 +23,6 @@ var NameWidget = function(args) {
       }
     }
     
-    // 4. This part renders the UI elements
     var createTextArea = function(value) {
       var textArea = document.createElement('textarea');
     
@@ -37,7 +33,6 @@ var NameWidget = function(args) {
       textArea.className = 'name';
       textArea.type = "text"
       textArea.addEventListener('change', addTag)
-    //   button.placeholder = "Imię"
      
       return textArea;
     }
@@ -58,16 +53,13 @@ var NameWidget = function(args) {
 
     var LastNameWidget = function(args) {
 
-        // 1. Find a current color setting in the annotation, if any
         var currentLastNameBody = args.annotation ? 
           args.annotation.bodies.find(function(b) {
             return b.purpose == 'lastName';
           }) : null;
         
-        // 2. Keep the value in a variable
         var currentLastNameValue = currentLastNameBody ? currentLastNameBody.value : null;
         
-        // 3. Triggers callbacks on user action
         var addTag = function(evt) {
           if (currentLastNameBody) {
             args.onUpdateBody(currentLastNameBody, {
@@ -84,7 +76,6 @@ var NameWidget = function(args) {
           }
         }
         
-        // 4. This part renders the UI elements
         var createTextArea = function(value) {
           var textArea = document.createElement('textarea');
         
@@ -95,7 +86,6 @@ var NameWidget = function(args) {
           textArea.className = 'lastName';
           textArea.type = "text"
           textArea.addEventListener('change', addTag)
-        //   button.placeholder = "Imię"
          
           return textArea;
         }
@@ -130,4 +120,55 @@ var NameWidget = function(args) {
               'style': 'stroke-width:4; stroke: green'
             }
           }
+        }
+
+
+        var NewPersonWidget = function(args) {
+
+          var currentCheckboxBody = args.annotation ? 
+            args.annotation.bodies.find(function(b) {
+              return b.purpose == 'newPerson';
+            }) : null;
+        
+          var currentCheckboxValue = currentCheckboxBody ? currentCheckboxBody.value : false;
+        
+          var toggleCheckbox = function(evt) {
+            if (currentCheckboxBody) {
+              args.onUpdateBody(currentCheckboxBody, {
+                type: 'TextualBody',
+                purpose: 'newPerson',
+                value: evt.target.checked
+              });
+            } else { 
+              args.onAppendBody({
+                type: 'TextualBody',
+                purpose: 'newPerson',
+                value: evt.target.checked
+              });
+            }
+          }
+        
+          var createCheckbox = function(isChecked) {
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = isChecked;
+            checkbox.className = 'checkbox-widget';
+            checkbox.addEventListener('change', toggleCheckbox);
+        
+            return checkbox;
+          }
+        
+          var container = document.createElement('div');
+          container.className = 'checkbox-widget-container';
+
+          var label = document.createElement('label');
+          label.textContent = " Czy dodać jako nową osobę?";
+          label.className = 'checkbox-label';
+          var checkbox = createCheckbox(currentCheckboxValue);
+        
+          container.appendChild(checkbox);
+          container.appendChild(label);
+
+        
+          return container;
         }

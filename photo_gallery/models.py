@@ -2,6 +2,7 @@ from django.db import models
 import base64
 from django.utils.safestring import mark_safe
 from django.contrib.postgres.fields import ArrayField
+from django.urls import reverse
 
 # Create your models here.
 
@@ -9,7 +10,7 @@ class Photographic(models.Model):
     
     id = models.AutoField(primary_key=True)
     awers = models.BinaryField(verbose_name="Awers")
-    rewers = models.BinaryField(verbose_name="Rewers", null=True)
+    rewers = models.BinaryField(verbose_name="Rewers", null=True, blank=True)
     colorized = models.BinaryField(verbose_name="Colorized Foto", null=True)
     width = models.IntegerField(verbose_name="Width")
     height = models.IntegerField(verbose_name="Height")
@@ -21,6 +22,9 @@ class Photographic(models.Model):
     def __str__(self):
         return f"Photographic {self.id} - {self.description[:20]}"
 
+    # def get_absolute_url_delete(self):
+    #     return reverse("photographic_delete", kwargs={"pk": self.pk})
+    
     @property
     def get_awers(self):
         image_data = base64.b64encode(self.awers).decode()
@@ -62,7 +66,7 @@ class Person(models.Model):
 class LearningPhotoFace(models.Model):
     id = models.AutoField(primary_key=True)
     face = models.BinaryField(verbose_name="Face Blob")
-    personid = models.ForeignKey('Person', null=True, on_delete=models.CASCADE, related_name='learning_photos')
+    personid = models.ForeignKey('Person', null=True, on_delete=models.SET_NULL, related_name='learning_photos')
     photographicid = models.ForeignKey('Photographic', on_delete=models.CASCADE, related_name='learning_faces')
     coordinates = ArrayField(
         models.FloatField(),

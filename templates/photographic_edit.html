@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block head_content %}
+<link rel="stylesheet" href="/static/css/annotorious.min.css">
+<script src="/static/js/tags.js"></script>
+<script src="/static/js/annotorious.min.js"></script>
+<script src="/static/js/custom_widgets.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+{% endblock head_content %}
+{% block title %}AI-Album{% endblock %}
+{% block content %}
+<main class="flex-1 p-8">
+    <header class="mb-6">
+        <h2 class="text-4xl font-semibold text-teal-400"></h2>
+    </header>
+
+    <h1 class="text-3xl font-semibold mb-6 text-gray-900 text-center">Edytuj Zdjęcie</h1>
+    <form id="add_form" method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}   
+        <div id="image-container" class="mt-6 flex justify-center">
+            <img id="image" src="data:image;base64,{{object.get_awers}}" alt="Podgląd zdjęcia" class="w-full max-h-[800px] object-contain">
+        </div>
+        <div>
+            <label for="rewers" class="block text-sm font-medium text-gray-700">Wybierz zdjęcie</label>
+            <div class="relative mt-1">
+                {{ form.rewers_image }}
+                <label for="rewers" class="block w-full text-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-500 bg-white hover:bg-teal-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400">
+                    Rewers
+                </label>    
+            </div>
+        <div id="rewers-container" class="hidden mt-6 flex justify-center">
+            <img id="rewers" src="#" alt="Podgląd zdjęcia" class="w-full max-h-[800px] object-contain">
+        </div>
+
+        <div>
+            <label for="description" class="block text-sm font-medium text-gray-700">Opis zdjęcia</label>
+            {{ form.description }}
+        </div>
+
+        <div>
+            {{ form.djtags }} 
+
+        </div>
+        <div>
+            <label for="tagsjs" class="block text-sm font-medium text-gray-700">Tagi</label>
+            <input id="tagsjs" type="text" name="tagsjs" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-400 focus:border-teal-400 sm:text-sm" placeholder="Wpisz tagi oddzielone przecinkami, np. &#x27;wakacje, rodzina&#x27;" id="tags" maxlength="255"> 
+            <div id="tagsContainer" class="tag-container"></div>
+
+        </div>
+
+        <div class="flex justify-center">
+            <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-400 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400">
+                Prześlij zdjęcie
+            </button>
+        </div>
+        {{ form.additional_data }} 
+    </form>
+
+    <script>
+let tagsContainer = document.getElementById('tagsContainer');
+
+let faces = "{{face_for_js|escapejs}}"
+if (faces) {
+    var json_faces = JSON.parse(faces)
+} else {
+    var json_faces = null
+}
+
+let tags = "{{tags_for_js|safe}}"
+tags = tags.split("'")
+let startTags = []
+tags.forEach(element => {
+    if (element.startsWith("#")){
+        startTags.push(element)
+    }
+});
+
+startTags.forEach(element => {
+    document.getElementById('djtags').value += element
+        createTagElement(value=element, element, tagsContainer, function (value) {
+                document.getElementById('djtags').value = document.getElementById('djtags').value.replace(value, '');
+            });
+    });
+
+
+document.getElementById('tagsjs').addEventListener('keydown', function(e) {
+        if (e.key === " ") {
+            e.preventDefault();
+            let input = e.target.value;
+            if (input.startsWith('#')) {
+                createTagElement(value=input, input, tagsContainer, function (value) {
+                document.getElementById('djtags').value = document.getElementById('djtags').value.replace(value, '');
+            })
+                document.getElementById('djtags').value += input
+                e.target.value = ""
+            } else {
+                e.target.value = null;
+            }
+        }
+    });
+
+        const imageContainer = document.getElementById('image-container');
+        const imageElement = document.getElementById('image');
+        let anno;
+
+        anno = Annotorious.init({
+            image: imageElement,
+            widgets: [
+                NameWidget,
+                LastNameWidget,
+                NewPersonWidget,
+            ],
+            formatters: [
+                NameAndLastNameFormatter,
+            ]
+        });
+
+        anno.on('createAnnotation', (annotation) => {
+        });
+    
+       
+     
+        for (let key in json_faces) {
+            if (json_faces.hasOwnProperty(key)) {
+                const entry = json_faces[key];
+                topX = entry.coords[0]
+                topY = entry.coords[1]
+                width = entry.coords[2] - topX
+                height = entry.coords[3] - topY
+
+                        var person = { 
+                        "@context": "http://www.w3.org/ns/anno.jsonld",
+                        "id": entry.id,
+                        "type": "Annotation",
+                        "body": [{
+                            "type": "TextualBody",
+                            "purpose": "name",
+                            "value": entry.name
+                        },
+                        {
+                            "type": "TextualBody",
+                            "purpose": "lastName",
+                            "value": entry.last_name
+                        },
+                        {
+                            "type": "TextualBody",
+                            "purpose": "newPerson",
+                            "value": false,
+                        }],
+                        "target": {
+                        "selector": {
+                            "type": "FragmentSelector",
+                            "conformsTo": "http://www.w3.org/TR/media-frags/",
+                            "value": 'xywh=pixel:'+ topX + ',' + topY + ',' + width + ',' + height 
+                        }
+                        },
+                    };
+                } 
+            anno.addAnnotation(person)
+            }
+        
+            var additionalData = []
+            anno.getAnnotations().forEach((element) => {
+                if (element["body"][1]["value"]) {
+                    additionalData.push(element)
+                    console.log(element)
+                } else {
+                    console.log("gowno")
+                }
+            });
+
+                // console.log(element["body"][1]["value"]))
+
+
+        document.getElementById('add_form').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            const additionalDataInput = document.getElementById('additional_data');
+            var additionalData = []
+            anno.getAnnotations().forEach((element) => {
+                if (element["body"][1]["value"]) {
+                    additionalData.push(element)
+                    console.log(element)
+                } else {
+                    console.log("gowno")
+                }
+            });
+            additionalDataInput.value = JSON.stringify(anno.getAnnotations());
+            this.submit();
+        });
+        
+        </script>
+</main>
+{% endblock content %}
+
