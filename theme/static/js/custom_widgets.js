@@ -1,15 +1,12 @@
 var NameWidget = function(args) {
 
-    // 1. Find a current color setting in the annotation, if any
     var currentNameBody = args.annotation ? 
       args.annotation.bodies.find(function(b) {
         return b.purpose == 'name';
       }) : null;
     
-    // 2. Keep the value in a variable
     var currentNameValue = currentNameBody ? currentNameBody.value : null;
     
-    // 3. Triggers callbacks on user action
     var addTag = function(evt) {
       if (currentNameBody) {
         args.onUpdateBody(currentNameBody, {
@@ -26,7 +23,6 @@ var NameWidget = function(args) {
       }
     }
     
-    // 4. This part renders the UI elements
     var createTextArea = function(value) {
       var textArea = document.createElement('textarea');
     
@@ -37,7 +33,6 @@ var NameWidget = function(args) {
       textArea.className = 'name';
       textArea.type = "text"
       textArea.addEventListener('change', addTag)
-    //   button.placeholder = "Imię"
      
       return textArea;
     }
@@ -58,16 +53,13 @@ var NameWidget = function(args) {
 
     var LastNameWidget = function(args) {
 
-        // 1. Find a current color setting in the annotation, if any
         var currentLastNameBody = args.annotation ? 
           args.annotation.bodies.find(function(b) {
             return b.purpose == 'lastName';
           }) : null;
         
-        // 2. Keep the value in a variable
         var currentLastNameValue = currentLastNameBody ? currentLastNameBody.value : null;
         
-        // 3. Triggers callbacks on user action
         var addTag = function(evt) {
           if (currentLastNameBody) {
             args.onUpdateBody(currentLastNameBody, {
@@ -84,7 +76,6 @@ var NameWidget = function(args) {
           }
         }
         
-        // 4. This part renders the UI elements
         var createTextArea = function(value) {
           var textArea = document.createElement('textarea');
         
@@ -95,7 +86,6 @@ var NameWidget = function(args) {
           textArea.className = 'lastName';
           textArea.type = "text"
           textArea.addEventListener('change', addTag)
-        //   button.placeholder = "Imię"
          
           return textArea;
         }
@@ -132,18 +122,16 @@ var NameWidget = function(args) {
           }
         }
 
+
         var NewPersonWidget = function(args) {
 
-          // 1. Find a current checkbox setting in the annotation, if any
           var currentCheckboxBody = args.annotation ? 
             args.annotation.bodies.find(function(b) {
               return b.purpose == 'newPerson';
             }) : null;
         
-          // 2. Keep the value in a variable (default is false)
           var currentCheckboxValue = currentCheckboxBody ? currentCheckboxBody.value : false;
         
-          // 3. Triggers callbacks on user action
           var toggleCheckbox = function(evt) {
             if (currentCheckboxBody) {
               args.onUpdateBody(currentCheckboxBody, {
@@ -160,7 +148,6 @@ var NameWidget = function(args) {
             }
           }
         
-          // 4. This part renders the UI elements
           var createCheckbox = function(isChecked) {
             var checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -171,17 +158,14 @@ var NameWidget = function(args) {
             return checkbox;
           }
         
-          // Create container for the widget
           var container = document.createElement('div');
           container.className = 'checkbox-widget-container';
 
           var label = document.createElement('label');
           label.textContent = " Czy dodać jako nową osobę?";
           label.className = 'checkbox-label';
-          // Create checkbox input
           var checkbox = createCheckbox(currentCheckboxValue);
         
-          // Append the checkbox to the container
           container.appendChild(checkbox);
           container.appendChild(label);
 

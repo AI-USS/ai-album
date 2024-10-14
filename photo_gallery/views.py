@@ -19,6 +19,7 @@ from django.db.models import Q
 
 
 
+
 def home(request):
     from base64 import b64encode
     images = Photographic.objects.all().order_by('-id')[:12]
@@ -78,12 +79,51 @@ def upload_image(request):
                                     height=file.image.size[1]
                                        )
 
+
             tags = tags.split("#")
             for tag in tags:
                 if tag is not "":
                     tagsORM, created = Tag.objects.get_or_create(keyword=tag)
                     image_model.tags.add(tagsORM)
-            image_model.save()
+
+
+            for annotation in additional:
+                for info in annotation["body"]:
+                    if info["purpose"] == "name":
+                        name = info["value"]
+                    if info["purpose"] == "lastName":
+                        last_name = info["value"]
+                    coords = annotation["target"]["selector"]["value"].split(':')[1].split(",")
+                    coords = list(map(float, coords))
+                    coords = [coords[0],coords[1],coords[0] + coords[2],coords[1] + coords[3]]
+
+
+                    opening_image_file = Image.open(file)
+                    cutted_face = opening_image_file.crop(coords)
+                    img_byte_arr = io.BytesIO()
+                    cutted_face.save(img_byte_arr, format=file.image.format)
+                    img_byte_arr = img_byte_arr.getvalue()
+
+                if name is not None and last_name is not None:
+                    person_model, created = Person.objects.get_or_create(
+                        name=name,
+                        surname=last_name
+                    )
+                    person_model.save()
+
+                    LearningPhotoFace.objects.create(
+                        face=img_byte_arr,
+                        personid=person_model,
+                        photographicid=image_model,
+                        coordinates=coords
+                    )
+                else:
+                    LearningPhotoFace.objects.create(
+                        face=img_byte_arr,
+                        personid=None,
+                        photographicid=image_model,
+                        coordinates=coords
+                    )
 
 
             for annotation in additional:
@@ -218,8 +258,8 @@ def _recognize_face(unknown_encoding, loaded_encodings):
     )
     if votes:
         return votes.most_common(1)[0][0]
-    
 
+    
 class PhotographicDeleteView(DeleteView):
     model = Photographic
     template_name = "photographic_delete.html"
@@ -348,4 +388,5 @@ class PhotographicEditView(UpdateView):
 
         self.object.save()
         return super().form_valid(form)
+      
     

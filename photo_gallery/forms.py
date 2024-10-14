@@ -19,7 +19,6 @@ class AddPhotoForm(forms.Form):
             'rows':'3'
         }),
         required=False
-
     )
 
     tags = forms.CharField(
@@ -31,7 +30,6 @@ class AddPhotoForm(forms.Form):
             'id':'djtags'
         }),
         required=False
-
     )
 
     additional_data = forms.CharField(
@@ -69,7 +67,6 @@ class EditPhotoForm(forms.ModelForm):
             'rows':'3'
         }),
         required=False
-
     )
 
     djtags = forms.CharField(
@@ -81,7 +78,6 @@ class EditPhotoForm(forms.ModelForm):
             'id':'djtags'
         }),
         required=False
-
     )
 
     additional_data = forms.CharField(
@@ -97,8 +93,8 @@ class EditPhotoForm(forms.ModelForm):
     class Meta:
         model = Photographic
         fields = (
-            # "image",
             "rewers_image",
             "description",
             "djtags",
         )
+        

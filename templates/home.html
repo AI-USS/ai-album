@@ -46,8 +46,8 @@
     </form>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> 
+
         {% for image in photographics %}
-        
         <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
             <img src="data:image;base64,{{image.get_awers}}" alt="Zdjęcie 1" class="w-full h-48 object-cover">
             <div class="p-4">
@@ -59,7 +59,30 @@
         </div>
         {% endfor %}
     </div>
+
+       
+
+
+    <script>
+        function showDialog(id) {
+            let dialog = document.getElementById('modal');
+
+            dialog.classList.remove('hidden');
+            setTimeout(() => {
+                console.log(id)
+                dialog.classList.remove('opacity-1');
+            }, 1);
+        }
+        function hideDialog() {
+            let dialog = document.getElementById('modal');
+            dialog.classList.add('opacity-100');
+            setTimeout(() => {
+                dialog.classList.add('hidden');
+            }, 1);
+        }
+    </script> 
 </main>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -120,6 +143,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
 {% endblock content %}
 

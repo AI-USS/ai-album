@@ -113,6 +113,7 @@ photoInput.addEventListener('change', function(event) {
                 data: data,
                 success: function (response) {
                     var res = JSON.parse(response)
+
                     jsonObject = res
                     for (let key in jsonObject) {
                         if (jsonObject.hasOwnProperty(key)) {
@@ -123,7 +124,7 @@ photoInput.addEventListener('change', function(event) {
                             topY = entry.coords[0]
                             width = entry.coords[1] - topX
                             height = entry.coords[2] - topY
-               
+
                             if (entry.recognized == false) {
                                     var person = { 
                                     "@context": "http://www.w3.org/ns/anno.jsonld",
