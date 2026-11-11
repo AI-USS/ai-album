@@ -1,0 +1,29 @@
+{% load static %}
+<main class="page form-page editor-page">
+    <a href="{% if editing %}{% url 'photographic_detail' object.pk %}{% else %}{% url 'home' %}{% endif %}" class="back-link">← {% if editing %}Wróć do zdjęcia{% else %}Wróć do zdjęć{% endif %}</a>
+    <header class="page-header"><div><p class="eyebrow">{% if editing %}Szczegóły wspomnienia{% else %}Nowe wspomnienie{% endif %}</p><h1>{% if editing %}Edytuj zdjęcie{% else %}Dodaj zdjęcie{% endif %}</h1><p class="muted">Podpisz osoby, aby łatwiej odnaleźć je w albumie.</p></div></header>
+    <noscript><p class="notice notice-warning">Do oznaczania osób i zapisywania formularza potrzebna jest włączona obsługa JavaScript.</p></noscript>
+    <form id="photo-form" method="post" enctype="multipart/form-data" class="form-stack" data-unsaved-warning="true" data-editing="{% if editing %}true{% else %}false{% endif %}" data-recognize-url="{% url 'recognize_face' %}">
+        {% csrf_token %}
+        {% if form.errors %}<div class="error-summary" role="alert" tabindex="-1"><h2>Sprawdź dane przed zapisaniem</h2><ul>{% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% if not editing %}<p>Ze względów bezpieczeństwa wybierz plik ponownie i sprawdź oznaczenia twarzy.</p>{% endif %}</div>{% endif %}
+        <section class="panel form-section">
+            <div class="form-section-heading"><h2>{% if editing %}Zdjęcie i osoby{% else %}1. Wybierz zdjęcie{% endif %}</h2><p class="help-text">Wybierz twarz na zdjęciu lub z listy poniżej. Brakującą twarz zaznacz, przeciągając po zdjęciu.</p></div>
+            {% if not editing %}<div class="upload-zone"><label for="awers">Wybierz zdjęcie z urządzenia</label>{{ form.image }}<p class="help-text">Po wybraniu pliku automatycznie poszukamy twarzy. Podpisywanie osób jest opcjonalne.</p>{{ form.image.errors }}</div>{% endif %}
+            <div id="image-container" class="photo-preview" {% if not editing %}hidden{% endif %}><img id="image" {% if editing %}src="data:image/{{ object.format|lower }};base64,{{ object.get_awers }}"{% endif %} alt="Zdjęcie z oznaczeniami twarzy"></div>
+            <p id="face-status" class="face-status" role="status" aria-live="polite">{% if editing %}Wczytywanie oznaczeń…{% else %}Wybierz plik, aby zobaczyć podgląd i wykryte twarze.{% endif %}</p>
+            <h3>Osoby na tym zdjęciu</h3><p class="help-text">Wybierz osobę z albumu lub dodaj nową. Podpisy zostaną zapisane razem ze zdjęciem.</p><div id="face-list" class="face-list" aria-label="Wykryte i zaznaczone twarze"></div>
+            <button id="retry-recognition" type="button" class="btn btn-secondary" hidden>Ponów rozpoznawanie</button>
+        </section>
+        <section class="panel form-section"><div class="form-section-heading"><h2>{% if not editing %}2. {% endif %}Opis i tagi</h2><p class="help-text">Dodaj kontekst, który pomoże Ci wrócić do tego wspomnienia.</p></div>
+            <div class="field"><label for="{{ form.description.id_for_label }}">Opis zdjęcia <span class="optional">(opcjonalnie)</span></label>{{ form.description }}{{ form.description.errors }}</div>
+            <div class="field"><label for="tag-entry">Tagi <span class="optional">(opcjonalnie)</span></label><input id="tag-entry" class="tag-entry" type="text" placeholder="Np. rodzina, wakacje" aria-describedby="tags-help" autocomplete="off"><p id="tags-help" class="help-text">Zatwierdź tag Enterem lub przecinkiem. Nie musisz wpisywać #.</p><div id="tagsContainer" class="tag-container" aria-label="Dodane tagi"></div><p id="tag-error" role="status" class="errorlist"></p>{% if editing %}{{ form.djtags }}{{ form.djtags.errors }}{% else %}{{ form.tags }}{{ form.tags.errors }}{% endif %}</div>
+        </section>
+        {% if editing %}<details class="panel"><summary>Tył zdjęcia <span class="optional">(opcjonalnie)</span></summary><div class="field"><label for="rewers-file">Dodaj lub zmień tył zdjęcia</label>{{ form.rewers_image }}{{ form.rewers_image.errors }}</div>{% if rewers_data %}<div class="photo-preview"><img src="data:image;base64,{{ rewers_data }}" alt="Zapisany tył zdjęcia"></div>{% endif %}</details>{% endif %}
+        {{ form.additional_data }}
+        <div class="actions"><button id="save-photo" type="submit" class="btn btn-primary" disabled>{% if editing %}Zapisz zmiany{% else %}Dodaj zdjęcie{% endif %}</button><a href="{% if editing %}{% url 'photographic_detail' object.pk %}{% else %}{% url 'home' %}{% endif %}" class="btn btn-secondary">Anuluj</a><p id="save-status" class="save-status" role="status" aria-live="polite"></p></div>
+    </form>
+    {{ available_people|json_script:'available-people' }}
+    {{ initial_tags|json_script:'initial-tags' }}
+    {{ initial_annotations|default_if_none:''|json_script:'initial-annotations' }}
+    {% if editing %}<p class="help-text">Kolorowanie i pobieranie wersji są dostępne w <a href="{% url 'photographic_detail' object.pk %}">widoku zdjęcia</a>.</p>{% endif %}
+</main>

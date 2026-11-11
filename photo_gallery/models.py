@@ -12,6 +12,8 @@ class Photographic(models.Model):
     awers = models.BinaryField(verbose_name="Awers")
     rewers = models.BinaryField(verbose_name="Rewers", null=True, blank=True)
     colorized = models.BinaryField(verbose_name="Colorized Foto", null=True)
+    colorized_at = models.DateTimeField(null=True, blank=True)
+    colorized_model = models.CharField(max_length=255, blank=True)
     width = models.IntegerField(verbose_name="Width")
     height = models.IntegerField(verbose_name="Height")
     description = models.TextField(verbose_name="Description", blank=True, null=True)
@@ -105,3 +107,18 @@ class FaceEncoding(models.Model):
     id = models.AutoField(primary_key=True)
     file = models.BinaryField()
     creation_date = models.DateField(auto_now_add=True)
+
+class ColorizationJob(models.Model):
+    photographic = models.ForeignKey(Photographic, on_delete=models.CASCADE, related_name='colorization_jobs')
+    status = models.CharField(max_length=10, default='queued', choices=[(s, s) for s in ('queued', 'running', 'succeeded', 'failed')])
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True)
+    finished_at = models.DateTimeField(null=True)
+    lease_until = models.DateTimeField(null=True)
+    reservation = models.UUIDField(null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    error_code = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['photographic'], condition=models.Q(status__in=['queued', 'running']), name='one_active_colorization')]
+        indexes = [models.Index(fields=['status', 'created_at'], name='colorization_queue_idx')]

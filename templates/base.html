@@ -4,34 +4,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AI-Album{% endblock title %}</title>
+    <title>{% block title %}Galeria rodzinna{% endblock %}</title>
     {% tailwind_css %}
-    <link rel="stylesheet" href="/static/css/custom.css">
-    {%block head_content%}    {%endblock head_content%}
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <script src="{% static 'js/album.js' %}" defer></script>
+    {% block head_content %}{% endblock %}
 </head>
-<body class="bg-gray-100 text-slate-900	">
-    <div class="min-h-screen flex">
-        <aside class="w-64 bg-gray-900 text-white shadow-md p-6">
-            <h1 class="text-2xl font-bold text-teal-400 mb-6">Galeria Rodzinna</h1>
-            <nav>
-                <ul>
-                    <li class="mb-4"><a href="/" class="hover:text-teal-400">Strona Główna</a></li>
-                    <li class="mb-4"><a href="{% url 'add' %}" class="hover:text-teal-400">Dodaj Zdjęcie</a></li>
-                    <li class="mb-4"><a href="#" class="hover:text-teal-400">Albumy</a></li>
-                    <li class="mb-4"><a href="#" class="hover:text-teal-400">Ustawienia</a></li>
-                </ul>
-            </nav>
-            <form action="{% url 'learn' %}" method="POST">
-                {% csrf_token %}
-                {{ learn_form.as_p }}
-                <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-400 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400">
-
-                    Ucz mnie Panie
-                </button>
-            </form>
-        </aside>
-        {% block content %}
-        {% endblock content %}
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <a href="{% url 'home' %}" class="brand">Galeria rodzinna</a>
+        <button class="menu-toggle btn btn-secondary" type="button" aria-expanded="false" aria-controls="main-navigation">Menu</button>
+        <nav id="main-navigation" class="navigation" aria-label="Nawigacja główna">
+            <a href="{% url 'home' %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>Zdjęcia</a>
+            <a href="{% url 'add' %}" {% if request.resolver_match.url_name == 'add' %}aria-current="page"{% endif %}>Dodaj zdjęcie</a>
+            <details class="extra-actions">
+                <summary>Dodatkowe działania</summary>
+                <p>Rozpoznawanie aktualizuje się automatycznie po dodaniu zdjęcia i zapisaniu zmian. Możesz też odświeżyć je ręcznie.</p>
+                <form action="{% url 'learn' %}" method="post" data-busy-label="Aktualizowanie…">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Odśwież rozpoznawanie osób</button>
+                </form>
+            </details>
+        </nav>
+    </aside>
+    <div class="workspace">
+        {% if messages %}
+        <div class="notifications" aria-label="Wynik operacji">
+            {% for message in messages %}<p class="notice notice-{{ message.tags }}" role="status">{{ message }}</p>{% endfor %}
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
     </div>
+</div>
 </body>
 </html>

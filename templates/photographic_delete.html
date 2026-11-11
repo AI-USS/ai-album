@@ -1,19 +1,4 @@
 {% extends "base.html" %}
-{% block title %}AI-Album{% endblock %}
 {% block content %}
-<main class="flex-1 p-8">
-    <header class="mb-6">
-        <h2 class="text-4xl font-semibold text-teal-400"></h2>
-        <p class="text-gray-600">Czy jesteś pewny, że chcesz usunąć zdjęcie?</p>
-    </header>
-
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="select-none rounded-lg bg-gradient-to-tr from-red-900 to-red-800 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-red-900/10 transition-all hover:shadow-lg hover:shadow-red-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
-            Ususń
-        </button>
-    </form>
-</main>
-{% endblock content %}
-
+<main class="page form-page"><a href="{% url 'photographic_detail' object.pk %}" class="back-link">← Wróć do zdjęcia</a><section class="panel"><h1>Usunąć to zdjęcie?</h1><img class="delete-preview" src="data:image/{{ object.format|lower }};base64,{{ object.get_awers }}" alt="{{ object.description|default:'Zdjęcie do usunięcia' }}"><p>{{ object.description|default:'Zdjęcie bez opisu' }}</p><p class="muted">Usunięte zostaną także jego wersja kolorowa i oznaczenia twarzy. Tej operacji nie można cofnąć.</p><form method="post" data-busy-label="Usuwanie…">{% csrf_token %}<div class="actions"><button type="submit" class="btn btn-danger">Usuń zdjęcie</button><a class="btn btn-secondary" href="{% url 'photographic_detail' object.pk %}">Anuluj</a></div></form></section></main>
+{% endblock %}
