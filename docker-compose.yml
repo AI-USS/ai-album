@@ -11,10 +11,32 @@ services:
     command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000), timeout=3).close()"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - PGHOST=db
+      - DDCOLOR_URL=http://ddcolor:3008
+
+  colorization-worker:
+    <<: *default-app
+    command: python manage.py colorization_worker
+    environment:
+      - PGHOST=db
+      - DDCOLOR_URL=http://ddcolor:3008
+    depends_on:
+      web:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      ddcolor:
+        condition: service_started
+    # Web binds its port only after migrations have completed.
 
   tailwind:
     <<: *default-app
@@ -25,6 +47,11 @@ services:
 
   db:
     image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
@@ -34,7 +61,29 @@ services:
     ports:
       - "5432:5432"
 
+  ddcolor:
+    restart: unless-stopped
+    image: ddcolor-fastapi:1.0
+    build:
+      context: ./ddcolor
+      dockerfile: ddcolor.Dockerfile
+    environment:
+      - DDCOLOR_MODEL=${DDCOLOR_MODEL:-camenduru/cv_ddcolor_image-colorization}
+      - DDCOLOR_MODEL_REVISION=${DDCOLOR_MODEL_REVISION:-50bfee609054154de7543fea8c02fc8bbeb8b0b0}
+      - COLORIZATION_MAX_BYTES=${COLORIZATION_MAX_BYTES:-20971520}
+      - COLORIZATION_MAX_PIXELS=${COLORIZATION_MAX_PIXELS:-20000000}
+    volumes:
+      - ddcolor_cache:/root/.cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3008/health/ready', timeout=5)"]
+      interval: 10s
+      timeout: 6s
+      retries: 60
+      start_period: 60s
+
+
 volumes:
+  ddcolor_cache:
   postgres_data:
     # driver: local
     # driver_opts:

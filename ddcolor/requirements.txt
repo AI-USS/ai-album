@@ -1,0 +1,15 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+python-multipart==0.0.22
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+modelscope==1.18.0
+packaging==24.1
+addict==2.4.0
+datasets==2.21.0
+huggingface-hub==0.24.6
+oss2==2.19.0
+pillow==10.4.0
+simplejson==3.19.3
+sortedcontainers==2.4.0
+timm==0.6.13

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+{% block head_content %}<script src="{% static 'js/photo-viewer.js' %}" defer></script><script src="{% static 'js/colorization.js' %}" defer></script>{% endblock %}
+{% block content %}
+<main class="page viewer-page">
+    <a class="back-link" href="{% url 'home' %}">← Wróć do zdjęć</a>
+    <header class="page-header"><div><p class="eyebrow">Wspomnienia w albumie</p><h1>{{ object.description|default:'Zdjęcie bez opisu' }}</h1></div><a class="btn btn-primary" href="{% url 'photographic_edit' object.pk %}">Edytuj szczegóły i osoby</a></header>
+    <div class="viewer-layout" id="photo-viewer">
+        <section class="panel viewer-photo" aria-label="Podgląd zdjęcia">
+            <div class="variant-buttons" role="group" aria-label="Wersja zdjęcia">
+                <button type="button" class="btn btn-secondary" data-variant="original" aria-pressed="true">Oryginał</button>
+                <button type="button" class="btn btn-secondary" data-variant="color" aria-pressed="false" {% if not object.has_result %}disabled{% endif %}>Wersja kolorowa</button>
+                {% if object.has_reverse %}<button type="button" class="btn btn-secondary" data-variant="reverse" aria-pressed="false">Tył zdjęcia</button>{% endif %}
+            </div>
+            <div class="viewer-stage"><img id="viewer-image" src="{% url 'original_image' object.pk %}" data-original="{% url 'original_image' object.pk %}" data-color="{% if object.has_result %}{% url 'colorized_image' object.pk %}{% endif %}" data-reverse="{% if object.has_reverse %}{% url 'reverse_image' object.pk %}{% endif %}" alt="Oryginał — {{ object.description|default:'zdjęcie bez opisu' }}"></div>
+            <p id="viewer-status" class="help-text" role="status" aria-live="polite">Oglądasz oryginał. Możesz powiększyć zdjęcie.</p>
+            <div class="actions"><a id="viewer-download" class="btn btn-secondary" href="{% url 'original_image' object.pk %}?download=1">Pobierz oryginał</a><button id="viewer-zoom" type="button" class="btn btn-secondary" aria-pressed="false">Powiększ zdjęcie</button></div>
+            <nav class="photo-pagination" aria-label="Przeglądanie zdjęć">{% if next_photo %}<a href="{% url 'photographic_detail' next_photo.pk %}">← Nowsze zdjęcie</a>{% endif %}{% if previous_photo %}<a href="{% url 'photographic_detail' previous_photo.pk %}">Starsze zdjęcie →</a>{% endif %}</nav>
+        </section>
+        <aside class="viewer-sidebar">
+            <section class="panel"><h2>Osoby na zdjęciu</h2><div class="person-links">{% for person in people %}<a href="{% url 'home' %}?people={{ person.pk }}">{{ person.name }} {{ person.surname }}</a>{% empty %}<p class="muted">Nie podpisano jeszcze żadnej osoby.</p>{% endfor %}</div>{% if unknown_faces %}<p class="help-text">Twarze do podpisania: {{ unknown_faces }}.</p>{% endif %}<a class="back-link" href="{% url 'photographic_edit' object.pk %}">Podpisz lub popraw osoby</a><h2>Tagi</h2><div class="person-links">{% for tag in object.tags.all %}<a href="{% url 'home' %}?tags={{ tag.pk }}">{{ tag.keyword }}</a>{% empty %}<p class="muted">Brak tagów.</p>{% endfor %}</div></section>
+            <section id="colorization-panel" class="panel colorization-section" data-start-url="{% url 'colorization_start' object.pk %}" data-status-url="{% url 'colorization_status' object.pk %}">
+                <h2>Przywróć kolory</h2><p class="muted">Kolory są rekonstrukcją AI. Oryginał pozostaje zachowany.</p><form>{% csrf_token %}<button type="button" class="btn btn-primary">{% if object.has_result %}Pokoloruj ponownie{% else %}Pokoloruj zdjęcie{% endif %}</button></form><p role="status" aria-live="polite"></p><p class="help-text">Po zleceniu możesz opuścić stronę i wrócić później.</p>
+                <div data-preview hidden><a class="btn btn-secondary">Pobierz wersję kolorową</a><button type="button" id="show-color" class="btn btn-secondary">Pokaż wersję kolorową</button></div>
+            </section>
+            <section class="panel delete-section"><h2>Usuń zdjęcie</h2><p class="help-text">Usunięcie obejmuje też wersję kolorową i oznaczenia twarzy.</p><a class="danger-link" href="{% url 'photographic_delete' object.pk %}">Przejdź do potwierdzenia usunięcia</a></section>
+        </aside>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,2 @@
+# datasets 2.21 / ModelScope 1.18 run on the NumPy 1.x ABI.
+pyarrow==17.0.0

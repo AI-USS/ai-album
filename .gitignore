@@ -136,3 +136,17 @@ GitHub.sublime-settings
 !.vscode/launch.json 
 !.vscode/extensions.json 
 .history
+
+# Local credentials and agent configuration
+.env.*
+!.env.example
+.aws/
+.codex/
+.agents/
+*.pem
+*.key
+
+# Downloaded model artifacts
+*.pt
+*.pth
+*.safetensors

@@ -25,7 +25,6 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-aHR0cHM6Ly95b3V0dS5iZS9kUXc0dzlXZ1hjUQ=='
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
@@ -123,7 +122,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pl'
 
 TIME_ZONE = 'UTC'
 
@@ -143,3 +142,22 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TAILWIND_APP_NAME = "theme"
+# DDColor runs outside the HTTP request lifecycle.
+DDCOLOR_URL = os.getenv('DDCOLOR_URL', 'http://localhost:3008')
+DDCOLOR_CONNECT_TIMEOUT = float(os.getenv('DDCOLOR_CONNECT_TIMEOUT', '5'))
+DDCOLOR_READ_TIMEOUT = float(os.getenv('DDCOLOR_READ_TIMEOUT', '300'))
+COLORIZATION_MAX_BYTES = int(os.getenv('COLORIZATION_MAX_BYTES', str(20 * 1024 * 1024)))
+COLORIZATION_MAX_PIXELS = int(os.getenv('COLORIZATION_MAX_PIXELS', '20000000'))
+COLORIZATION_MAX_ATTEMPTS = 2
+COLORIZATION_LEASE_SECONDS = max(900, int(DDCOLOR_CONNECT_TIMEOUT + DDCOLOR_READ_TIMEOUT + 120))
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'colorization_console': {'class': 'logging.StreamHandler'}},
+    'loggers': {
+        'photo_gallery.services.jobs': {
+            'handlers': ['colorization_console'], 'level': 'INFO', 'propagate': False,
+        },
+    },
+}
